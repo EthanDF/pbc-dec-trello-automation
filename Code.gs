@@ -71,7 +71,8 @@ function doPost(e) {
 
 // ── Gmail Poller ──────────────────────────────────────────────
 /**
- * Polls Gmail for unread messages matching the configured query.
+ * Polls Gmail for messages with the "task-requests" label.
+ * Processes them into Trello cards, then removes the label.
  * Called by a time-driven trigger every 10 minutes.
  */
 function pollGmail() {
@@ -83,8 +84,7 @@ function pollGmail() {
     return;
   }
 
-  // Ensure the "Processed" label exists
-  var processedLabel = getOrCreateLabel(CONFIG.GMAIL.PROCESSED_LABEL);
+  var taskLabel = getOrCreateLabel(CONFIG.GMAIL.TASK_LABEL);
 
   for (var i = 0; i < threads.length; i++) {
     var thread = threads[i];
@@ -95,9 +95,8 @@ function pollGmail() {
     var dedupKey = 'em_' + messageId;
 
     if (isDuplicate(dedupKey)) {
-      // Already processed — just make sure label is applied
-      thread.addLabel(processedLabel);
-      thread.markRead();
+      // Already processed — just remove the label
+      thread.removeLabel(taskLabel);
       continue;
     }
 
@@ -117,9 +116,8 @@ function pollGmail() {
       Logger.log('Error processing email "' + msg.getSubject() + '": ' + err.message);
     }
 
-    // Mark as read and label regardless
-    thread.addLabel(processedLabel);
-    thread.markRead();
+    // Remove the label so it's not picked up again
+    thread.removeLabel(taskLabel);
   }
 }
 

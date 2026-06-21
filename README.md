@@ -63,14 +63,14 @@ Go to **Project Settings → Script Properties** and add:
 3. Authorize the required Gmail permissions when prompted
 4. The trigger will poll every 10 minutes for emails matching the query in `config.gs`
 
-**Gmail filter config** (in `config.gs`):
-- Default query: `label:task-requests is:unread`
-- Create a Gmail label called `task-requests` and apply it to incoming request emails
-- Processed emails get a `Processed` label and are marked as read
+**How it works:**
+- The poller picks up any email with the `task-requests` label (read or unread)
+- After processing, the label is **removed** — that's your signal the email was turned into a card
+- The email's read/unread status is left untouched
 
 ### 6. Create Gmail Label
 
-In Gmail, create a label called `task-requests`. Apply it (manually or via a Gmail filter) to emails that should become Trello cards.
+In Gmail, create a label called `task-requests`. To turn an email into a Trello card, apply this label to it. The label will be automatically removed once the card is created (within 10 minutes).
 
 ## Card Format
 

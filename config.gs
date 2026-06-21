@@ -26,8 +26,8 @@ var CONFIG = {
 
   // Gmail polling filter — adjust these to match your incoming requests
   GMAIL: {
-    QUERY: 'label:task-requests is:unread',   // Gmail search query
-    PROCESSED_LABEL: 'Processed'               // applied after processing
+    QUERY: 'label:task-requests',               // Gmail search query
+    TASK_LABEL: 'task-requests'                 // removed after processing
   }
 };
 
