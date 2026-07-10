@@ -72,6 +72,18 @@ Go to **Project Settings → Script Properties** and add:
 
 In Gmail, create a label called `task-requests`. To turn an email into a Trello card, apply this label to it. The label will be automatically removed once the card is created (within 10 minutes).
 
+## Confirmation Emails
+
+After a Trello card is created, the original requestor receives a confirmation email with:
+
+- A direct link to the Trello card so they can track status
+- Instructions to create a free Trello account and "Watch" the card for automatic updates
+- Contact info (`social@pbcdemocraticparty.org`) for follow-up questions
+
+All confirmation emails are CC'd to `social@pbcdemocraticparty.org`.
+
+The API token owner is also auto-subscribed to each new card so the team receives Trello notifications on status changes.
+
 ## Card Format
 
 Cards are created in the **Backlog** list with:

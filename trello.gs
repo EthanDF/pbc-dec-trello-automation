@@ -73,7 +73,10 @@ function createTrelloCard(cardData, source) {
     addAttachments(card.id, cardData.attachmentUrls, apiKey, token);
   }
 
-  return card.id;
+  // Auto-subscribe the API token owner so the team gets notifications
+  subscribeToCard(card.id, apiKey, token);
+
+  return { id: card.id, url: card.shortUrl || card.url };
 }
 
 /**
@@ -113,6 +116,28 @@ function addChecklist(cardId, items, apiKey, token) {
   }
 
   Logger.log('Added ' + items.length + ' checklist items to card ' + cardId);
+}
+
+/**
+ * Subscribes the API token owner to a card so the team receives
+ * notifications when the card's status changes.
+ */
+function subscribeToCard(cardId, apiKey, token) {
+  var response = UrlFetchApp.fetch(TRELLO_API_BASE + '/cards/' + cardId + '/subscribed', {
+    method: 'put',
+    payload: {
+      key: apiKey,
+      token: token,
+      value: true
+    },
+    muteHttpExceptions: true
+  });
+
+  if (response.getResponseCode() === 200) {
+    Logger.log('Subscribed to card ' + cardId);
+  } else {
+    Logger.log('Failed to subscribe to card ' + cardId + ': ' + response.getContentText());
+  }
 }
 
 /**

@@ -48,17 +48,25 @@ function doPost(e) {
       ).setMimeType(ContentService.MimeType.JSON);
     }
 
+    // Capture sender email for confirmation (before PII stripping)
+    var senderEmail = payload.email || null;
+
     // Process through Claude
     var cardData = extractCardData(rawContent, source);
 
     // Create Trello card
-    var cardId = createTrelloCard(cardData, source);
+    var card = createTrelloCard(cardData, source);
+
+    // Send confirmation to original sender
+    if (senderEmail) {
+      sendConfirmationEmail(senderEmail, cardData.title, card.url);
+    }
 
     // Mark as processed
     markProcessed(dedupKey);
 
     return ContentService.createTextOutput(
-      JSON.stringify({ status: 'ok', cardId: cardId })
+      JSON.stringify({ status: 'ok', cardId: card.id })
     ).setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
@@ -101,16 +109,20 @@ function pollGmail() {
     }
 
     try {
+      var senderEmail = msg.getFrom();
       var rawContent = 'Subject: ' + msg.getSubject()
-        + '\nFrom: ' + msg.getFrom()
+        + '\nFrom: ' + senderEmail
         + '\nDate: ' + msg.getDate()
         + '\n\n' + msg.getPlainBody();
 
       var cardData = extractCardData(rawContent, 'Via Email');
-      var cardId = createTrelloCard(cardData, 'Via Email');
+      var card = createTrelloCard(cardData, 'Via Email');
+
+      // Send confirmation to original sender
+      sendConfirmationEmail(senderEmail, cardData.title, card.url);
 
       markProcessed(dedupKey);
-      Logger.log('Created card ' + cardId + ' from email: ' + msg.getSubject());
+      Logger.log('Created card ' + card.id + ' from email: ' + msg.getSubject());
 
     } catch (err) {
       Logger.log('Error processing email "' + msg.getSubject() + '": ' + err.message);
@@ -199,6 +211,43 @@ function buildFormContent(payload) {
   }
 
   return lines.join('\n');
+}
+
+// ── Confirmation Email ───────────────────────────────────────
+/**
+ * Sends a confirmation email to the original requestor with a link
+ * to their Trello card so they can track status changes.
+ * CCs social@pbcdemocraticparty.org on all confirmations.
+ *
+ * @param {string} recipientEmail - The original sender's email address
+ * @param {string} cardTitle - The Trello card title
+ * @param {string} cardUrl - The Trello card URL
+ */
+function sendConfirmationEmail(recipientEmail, cardTitle, cardUrl) {
+  if (!recipientEmail || !cardUrl) return;
+
+  var subject = 'PBC DEC — Your request has been received: ' + cardTitle;
+  var body = 'Hello,\n\n'
+    + 'Thank you for submitting your request. A task has been created and our team will begin working on it.\n\n'
+    + 'You can track the status of your request here:\n'
+    + cardUrl + '\n\n'
+    + 'Want automatic updates? Create a free Trello account at https://trello.com/signup, '
+    + 'then click "Watch" on the card to receive notifications when the status changes.\n\n'
+    + 'For any questions, please reference the card link above and email social@pbcdemocraticparty.org.\n\n'
+    + 'Thank you,\n'
+    + 'PBC Democratic Executive Committee';
+
+  try {
+    MailApp.sendEmail({
+      to: recipientEmail,
+      cc: 'social@pbcdemocraticparty.org',
+      subject: subject,
+      body: body
+    });
+    Logger.log('Confirmation email sent to ' + recipientEmail + ' for card: ' + cardTitle);
+  } catch (e) {
+    Logger.log('Failed to send confirmation email to ' + recipientEmail + ': ' + e.message);
+  }
 }
 
 // ── Trigger Setup ─────────────────────────────────────────────
