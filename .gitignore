@@ -1,6 +1,9 @@
 # Gravity Forms exports (contain PII)
 *.csv
 
+# DNS/DKIM records
+DNS Host name*
+
 # Environment / credentials
 .env
 *.env

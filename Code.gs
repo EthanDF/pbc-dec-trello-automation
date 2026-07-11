@@ -49,7 +49,8 @@ function doPost(e) {
     }
 
     // Capture sender email for confirmation (before PII stripping)
-    var senderEmail = payload.email || null;
+    // Gravity Forms field 10 = Email, also check common field names
+    var senderEmail = payload['10'] || payload.email || null;
 
     // Process through Claude
     var cardData = extractCardData(rawContent, source);
@@ -235,7 +236,8 @@ function sendConfirmationEmail(recipientEmail, cardTitle, cardUrl) {
     + 'then click "Watch" on the card to receive notifications when the status changes.\n\n'
     + 'For any questions, please reference the card link above and email social@pbcdemocraticparty.org.\n\n'
     + 'Thank you,\n'
-    + 'PBC Democratic Executive Committee';
+    + 'PBC Democratic Party\n'
+    + 'Communications Committee';
 
   try {
     MailApp.sendEmail({
