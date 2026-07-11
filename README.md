@@ -6,7 +6,7 @@ Automated pipeline that converts Gmail messages and Gravity Forms submissions in
 
 ```
 Gmail (polled every 10 min)  ──┐
-                               ├──→ Apps Script ──→ Claude API ──→ Trello Card
+                               ├──→ Apps Script ──→ Claude API ──→ Trello Card ──→ Confirmation Email
 Gravity Forms (webhook POST) ──┘
 ```
 
@@ -80,9 +80,9 @@ After a Trello card is created, the original requestor receives a confirmation e
 - Instructions to create a free Trello account and "Watch" the card for automatic updates
 - Contact info (`social@pbcdemocraticparty.org`) for follow-up questions
 
-All confirmation emails are CC'd to `social@pbcdemocraticparty.org`.
+All confirmation emails are CC'd to `social@pbcdemocraticparty.org`. The API token owner is also auto-subscribed to each new card so the team receives Trello notifications on status changes.
 
-The API token owner is also auto-subscribed to each new card so the team receives Trello notifications on status changes.
+**Note:** Emails currently send from the script owner's Gmail account (ethanfenichel@gmail.com). To send from `social@pbcdemocraticparty.org`, DKIM authentication must be configured for the domain (see "Pending: DKIM Setup" below).
 
 ## Card Format
 
@@ -102,9 +102,25 @@ Each processed item is tracked by a unique key in Script Properties:
 
 Duplicate submissions are silently skipped.
 
+## Pending: DKIM Setup
+
+To migrate the script to the `social@pbcdemocraticparty.org` account (so confirmation emails come from that address):
+
+1. Add a DNS TXT record in **Cloudflare** (where pbcdemocraticparty.org nameservers are hosted):
+   - **Type:** TXT
+   - **Name:** `google._domainkey`
+   - **Value:** *(the DKIM key from Google Admin → Apps → Gmail → Authenticate email)*
+   - **Proxy status:** DNS only
+2. In Google Admin, go to **Authenticate email** and click **Start Authentication**
+3. Create a new Apps Script project under the social@ account, paste in all files, set Script Properties, deploy, and authorize permissions
+4. Update the Gravity Forms webhook URL to the new deployment
+5. Run `setupGmailTrigger()` in the new project
+
 ## Troubleshooting
 
 - **Check logs:** In Apps Script, go to **Executions** to see logs and errors
 - **Test the webhook:** Use the Apps Script editor to run `doPost()` with a test payload
 - **Claude errors:** Verify `ANTHROPIC_API_KEY` is set correctly in Script Properties
 - **Trello errors:** Verify `TRELLO_API_KEY` and `TRELLO_TOKEN` are set and have write access to the board
+- **Confirmation email not sending:** Run any function from the Apps Script editor to trigger the authorization popup for `MailApp.sendEmail` permissions. Web app deployments won't prompt on their own.
+- **Email rejected (message rejected error):** The sending account's domain likely needs DKIM/SPF configured. See "Pending: DKIM Setup" above.
